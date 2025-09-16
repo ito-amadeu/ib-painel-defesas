@@ -3,7 +3,6 @@ import streamlit as st
 from datetime import datetime, timedelta
 import pytz
 
-
 # ===============================
 # Configurações
 # ===============================
@@ -57,7 +56,7 @@ def show_block(title, icon, data, always_show=True):
         st.subheader(f"{icon} {title}")
 
         # Seleciona colunas
-        subset = data[["Data", "Hora", "Candidato(a)", "Orientador(a)", "Título", "Programa", "Nível", "Local"]]
+        subset = data[["Data", "Hora", "Candidato", "Orientador", "Título", "Programa", "Nível", "Local"]]
 
         # Converte para HTML sem índice
         html = subset.to_html(index=False, escape=False)
@@ -88,6 +87,7 @@ def show_block(title, icon, data, always_show=True):
 
     elif always_show:
         st.info(f"Nenhuma {title.lower()} encontrada.")
+
 
 # Blocos
 show_block("Defesas em andamento", "📌", df[df["status"] == "andamento"].sort_values("inicio"), always_show=False)
