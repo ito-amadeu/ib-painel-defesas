@@ -51,7 +51,7 @@ st.set_page_config(layout="wide")
 st.title("📜 Painel de Defesas - IB Unicamp")
 st.markdown(f"### 📅 Hoje: {hoje.strftime('%d/%m/%Y')} | ⏰ Agora: {agora.strftime('%H:%M')}")
 
-def show_block(title, icon, data):
+def show_block(title, icon, data, always_show=True):
     if not data.empty:
         st.subheader(f"{icon} {title}")
         st.table(
@@ -59,11 +59,12 @@ def show_block(title, icon, data):
                 ["Data", "Hora", "Candidato", "Orientador", "Título", "Programa", "Nível", "Local"]
             ]
         )
-    else:
+    elif always_show:
+        # Só mostra aviso nos blocos semanais/futuros
         st.info(f"Nenhuma {title.lower()} encontrada.")
 
 # Blocos
-show_block("Defesas em andamento", "📌", df[df["status"] == "andamento"].sort_values("inicio"))
-show_block("Próximas de hoje", "⏭️", df[df["status"] == "hoje"].sort_values("inicio"))
+show_block("Defesas em andamento", "📌", df[df["status"] == "andamento"].sort_values("inicio"), always_show=False)
+show_block("Próximas de hoje", "⏭️", df[df["status"] == "hoje"].sort_values("inicio"), always_show=False)
 show_block("Próximas desta semana", "📅", df[df["status"] == "semana"].sort_values("inicio"))
 show_block("Futuras", "🔮", df[df["status"] == "futuro"].sort_values("inicio"))
