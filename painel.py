@@ -54,13 +54,38 @@ st.markdown(f"### 📅 Hoje: {hoje.strftime('%d/%m/%Y')} | ⏰ Agora: {agora.str
 def show_block(title, icon, data, always_show=True):
     if not data.empty:
         st.subheader(f"{icon} {title}")
-        st.table(
-            data[
-                ["Data", "Hora", "Candidato", "Orientador", "Título", "Programa", "Nível", "Local"]
-            ]
-        )
+
+        # Seleciona colunas
+        subset = data[["Data", "Hora", "Candidato", "Orientador", "Título", "Programa", "Nível", "Local"]]
+
+        # Converte para HTML sem índice
+        html = subset.to_html(index=False, escape=False)
+
+        # CSS customizado
+        st.markdown("""
+            <style>
+            table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            th, td {
+                border: 1px solid #ddd;
+                padding: 6px 10px;
+                text-align: left;
+                font-size: 14px;
+            }
+            th {
+                background-color: #f2f2f2;
+                font-weight: bold;
+            }
+            td:nth-child(2) { text-align: center; font-family: monospace; } /* Hora */
+            td:nth-child(1) { text-align: center; font-family: monospace; } /* Data */
+            </style>
+        """, unsafe_allow_html=True)
+
+        st.markdown(html, unsafe_allow_html=True)
+
     elif always_show:
-        # Só mostra aviso nos blocos semanais/futuros
         st.info(f"Nenhuma {title.lower()} encontrada.")
 
 # Blocos
