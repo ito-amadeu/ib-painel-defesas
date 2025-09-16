@@ -59,7 +59,7 @@ def show_block(title, icon, data, always_show=True):
         st.subheader(f"{icon} {title}")
 
         # Seleciona colunas
-        subset = data[["Data", "Hora", "Candidato", "Orientador", "Título", "Programa", "Nível", "Local"]]
+        subset = data[["Data", "Hora", "Candidato(a)", "Orientador(a)", "Título", "Programa", "Nível", "Local"]]
 
         # Converte para HTML sem índice
         html = subset.to_html(index=False, escape=False)
