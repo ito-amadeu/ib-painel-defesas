@@ -18,56 +18,52 @@ df["hora"] = pd.to_datetime(df["Hora"], format="%H:%M").dt.time
 # Cria datetime completo
 df["inicio"] = df.apply(lambda r: datetime.combine(r["data"].date(), r["hora"], tzinfo=TZ), axis=1)
 
-# Define hora atual
-agora = datetime.now(TZ)
+# Estima fim como +3h (ajuste se necessário)
+df["fim"] = df["inicio"] + timedelta(hours=3)
 
-# Status da defesa
+# Hora atual
+agora = datetime.now(TZ)
+hoje = agora.date()
+fim_semana = hoje + timedelta(days=6 - hoje.weekday())  # domingo
+
+# Classificação por status
 def classificar(row):
-    fim = row["inicio"] + timedelta(hours=3)  # estimando 3h por defesa
-    if row["inicio"] <= agora <= fim:
+    if row["inicio"] <= agora <= row["fim"]:
         return "andamento"
-    elif agora < row["inicio"]:
-        return "proxima"
+    elif row["data"].date() == hoje and row["inicio"] > agora:
+        return "hoje"
+    elif hoje < row["data"].date() <= fim_semana:
+        return "semana"
+    elif row["data"].date() > fim_semana:
+        return "futuro"
     else:
         return "encerrada"
 
 df["status"] = df.apply(classificar, axis=1)
 
-# Tempo restante ou até começar
-def tempo_formatado(delta):
-    total_min = int(delta.total_seconds() // 60)
-    h, m = divmod(total_min, 60)
-    return f"{h:02d}h {m:02d}m"
-
-def info_tempo(row):
-    fim = row["inicio"] + timedelta(hours=3)
-    if row["status"] == "andamento":
-        return tempo_formatado(fim - agora)
-    elif row["status"] == "proxima":
-        return tempo_formatado(row["inicio"] - agora)
-    return None
-
-df["tempo"] = df.apply(info_tempo, axis=1)
+# Mantém só as não encerradas
+df = df[df["status"] != "encerrada"]
 
 # ===============================
 # UI
 # ===============================
 st.set_page_config(layout="wide")
 st.title("📜 Painel de Defesas - IB Unicamp")
-st.markdown(f"### 📅 Hoje: {agora.strftime('%d/%m/%Y')} | ⏰ Agora: {agora.strftime('%H:%M')}")
+st.markdown(f"### 📅 Hoje: {hoje.strftime('%d/%m/%Y')} | ⏰ Agora: {agora.strftime('%H:%M')}")
 
-# Em andamento
-df_andamento = df[df["status"] == "andamento"].sort_values("inicio")
-if not df_andamento.empty:
-    st.subheader("📌 Defesas em andamento")
-    st.table(df_andamento[["Candidato", "Programa", "Nível", "Local", "inicio", "tempo"]])
-else:
-    st.info("Nenhuma defesa em andamento no momento.")
+def show_block(title, icon, data):
+    if not data.empty:
+        st.subheader(f"{icon} {title}")
+        st.table(
+            data[
+                ["Data", "Hora", "Candidato", "Orientador", "Título", "Programa", "Nível", "Local"]
+            ]
+        )
+    else:
+        st.info(f"Nenhuma {title.lower()} encontrada.")
 
-# Próximas
-df_proximas = df[df["status"] == "proxima"].sort_values("inicio")
-if not df_proximas.empty:
-    st.subheader("⏭️ Próximas defesas")
-    st.table(df_proximas[["Candidato", "Programa", "Nível", "Local", "inicio", "tempo"]])
-else:
-    st.info("Nenhuma defesa futura encontrada.")
+# Blocos
+show_block("Defesas em andamento", "📌", df[df["status"] == "andamento"].sort_values("inicio"))
+show_block("Próximas de hoje", "⏭️", df[df["status"] == "hoje"].sort_values("inicio"))
+show_block("Próximas desta semana", "📅", df[df["status"] == "semana"].sort_values("inicio"))
+show_block("Futuras", "🔮", df[df["status"] == "futuro"].sort_values("inicio"))
