@@ -3,6 +3,9 @@ import streamlit as st
 from datetime import datetime, timedelta
 import pytz
 
+# coloca no topo do seu app
+st.markdown("<meta http-equiv='refresh' content='60'>", unsafe_allow_html=True)
+
 # ===============================
 # Configurações
 # ===============================
