@@ -1,59 +1,47 @@
-import requests
-from bs4 import BeautifulSoup
 import pandas as pd
 import streamlit as st
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 
+# ===============================
+# Configurações
+# ===============================
 TZ = pytz.timezone("America/Sao_Paulo")
-URL = "https://www.ib.unicamp.br/pos/proximasdefesas"
+st.set_page_config(layout="wide")
+st.title("🎓 Painel de Defesas - IB Unicamp")
 
-def buscar_defesas():
-    session = requests.Session()
-    r = session.get(URL, timeout=20)
-    r.raise_for_status()
-    soup = BeautifulSoup(r.text, "html.parser")
+# Lê os dados
+df = pd.read_csv("defesas_ib.csv")
 
-    # Tente achar tabelas ou listas de defesas
-    # Você vai ter que inspecionar o HTML real (no navegador) para ver quais tags/classes são usadas
-    # Exemplo fictício:
-    rows = soup.select("table.defesas tbody tr")
-    dados = []
-    for row in rows:
-        cols = row.find_all("td")
-        if len(cols) >= 4:
-            titulo = cols[0].get_text(strip=True)
-            autor = cols[1].get_text(strip=True)
-            data_hora = cols[2].get_text(strip=True)
-            local = cols[3].get_text(strip=True)
-            # Parse data_hora, ex: "20/09/2025 14:00"
-            try:
-                dt = datetime.strptime(data_hora, "%d/%m/%Y %H:%M")
-                dt = TZ.localize(dt)
-            except ValueError:
-                # tentar outros formatos
-                dt = None
-            dados.append({
-                "titulo": titulo,
-                "autor": autor,
-                "data_hora": dt,
-                "local": local
-            })
+# Normaliza colunas (ajuste se os nomes diferirem no CSV)
+# Esperado: data, hora, candidato, orientador, titulo, local
+df["data"] = pd.to_datetime(df["data"], dayfirst=True).dt.date
+df["hora"] = pd.to_datetime(df["hora"], format="%H:%M").dt.time
 
-    df = pd.DataFrame(dados)
-    return df
+# Cria datetime completo
+df["inicio_dt"] = df.apply(lambda r: datetime.combine(r["data"], r["hora"], tzinfo=TZ), axis=1)
 
-def painel_defesas():
-    st.title("🎓 Próximas Defesas - IB Unicamp")
-    df = buscar_defesas()
-    if df.empty:
-        st.info("Não foi possível encontrar defesas ou página inacessível.")
+# Hora atual
+agora = datetime.now(TZ)
+
+# Status
+def classificar(row):
+    if agora > row["inicio_dt"] + timedelta(hours=4):  # assume defesas duram até 4h
+        return "encerrada"
+    elif row["inicio_dt"] <= agora <= row["inicio_dt"] + timedelta(hours=4):
+        return "andamento"
     else:
-        df = df.sort_values("data_hora")
-        df["data"] = df["data_hora"].dt.strftime("%d/%m/%Y")
-        df["hora"] = df["data_hora"].dt.strftime("%H:%M")
-        st.table(df[["data", "hora", "titulo", "autor", "local"]])
+        return "proxima"
 
-if __name__ == "__main__":
-    st.set_page_config(layout="wide")
-    painel_defesas()
+df["status"] = df.apply(classificar, axis=1)
+
+# Coluna de tempo dinâmico
+def tempo_formatado(delta):
+    total_min = int(delta.total_seconds() // 60)
+    h, m = divmod(total_min, 60)
+    return f"{h:02d}h {m:02d}m"
+
+def info_tempo(row):
+    if row["status"] == "andamento":
+        return "⏳ " + tempo_formatado((row["inicio_dt"] + timedelta(hours=4)) - agora)
+    elif row["status"] ==
