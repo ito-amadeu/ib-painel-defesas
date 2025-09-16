@@ -48,6 +48,9 @@ df = df[df["status"] != "encerrada"]
 # UI
 # ===============================
 st.set_page_config(layout="wide")
+# coloca no topo do seu app
+st.markdown("<meta http-equiv='refresh' content='60'>", unsafe_allow_html=True)
+
 st.title("📜 Painel de Defesas - IB Unicamp")
 st.markdown(f"### 📅 Hoje: {hoje.strftime('%d/%m/%Y')} | ⏰ Agora: {agora.strftime('%H:%M')}")
 
