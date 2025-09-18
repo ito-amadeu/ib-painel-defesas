@@ -49,7 +49,7 @@ df = df[df["status"] != "encerrada"]
 # ===============================
 st.set_page_config(
     page_title="Painel de Defesas - IB Unicamp",  # aparece na aba do navegador
-    page_icon="📚",  # ícone na aba
+    page_icon="📜",  # ícone na aba
     layout="wide"
 )
 # coloca no topo do seu app
